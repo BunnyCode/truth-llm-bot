@@ -1,34 +1,24 @@
 console.log('Starting Stealth-Bot')
 
 require('dotenv').config()
-const { Client, IntentsBitField, Collection, SlashCommandBuilder} = require('discord.js')
-const { Routes } = require('discord.js');
-const myIntents = new IntentsBitField()
-myIntents.add(IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers)
+const { token } = process.env
+const { Client, IntentsBitField, Collection, GatewayIntentBits, SlashCommandBuilder } = require('discord.js')
+const fs = require('fs')
 
-await rest.put(
-	Routes.applicationCommands(clientId),
-	{ body: commands },
-)
 
-const client = new Client({ intents: myIntents })
-
+const client = new Client({ intents: GatewayIntentBits.Guilds })
 client.commands = new Collection()
+client.commandArray = []
 
-const data = new SlashCommandBuilder()
-	.setName('echo')
-	.setDescription('Replies with your input!')
-	.addStringOption(option =>
-		option.setName('input')
-			.setDescription('The input to echo back')
-			.setRequired(true));
+const functionFolders = fs.readdirSync('./src/functions')
+for (const folder of functionFolders) {
+	const functionFiles = fs
+		.readdirSync(`./src/functions/${folder}`)
+		.filter(file => file.endsWith('.js'))
+	for (const file of functionFiles) require(`./functions/${folder}/${file}`)(client)
+}
 
-client.on('interactionCreate', async interaction => {
-	if (!interaction.isChatInputCommand()) return;
 
-	if (interaction.commandName === 'ping') {
-		await interaction.reply('Pong!');
-	}
-})
-
-client.login(process.env.DISCORD_TOKEN)
+client.handleEvents()
+client.handleCommands()
+client.login(token)
