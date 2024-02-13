@@ -1,1 +1,1 @@
-# Stealth-bot
+# truth-llm-bot

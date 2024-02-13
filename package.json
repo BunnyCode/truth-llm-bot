@@ -1,5 +1,5 @@
 {
-  "name": "stealth-bot",
+  "name": "truth-llm-bot",
   "version": "1.0.0",
   "description": "Discord Bot",
   "main": "src/bot.js",
