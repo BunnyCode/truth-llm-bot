@@ -7,7 +7,7 @@
     "dev": "nodemon src/bot.js",
     "start": "node src/bot.js"
   },
-  "author": "Thoedor (Oxxygen) Borgman",
+  "author": ["Thoedor Borgman", "Fredrik Jurgell"],
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^2.0.19"
