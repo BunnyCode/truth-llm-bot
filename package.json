@@ -4,19 +4,22 @@
   "description": "Discord Bot",
   "main": "src/bot.js",
   "scripts": {
-    "dev": "nodemon src/bot.js",
+    "dev": "nodemon -r dotenv/config src/bot.js",
     "start": "node src/bot.js"
   },
-  "author": ["Thoedor Borgman", "Fredrik Jurgell"],
+  "author": [
+    "Theodor Borgman",
+    "Fredrik Jurgell"
+  ],
   "license": "ISC",
   "devDependencies": {
-    "nodemon": "^2.0.19"
+    "dotenv": "^16.4.4",
+    "nodemon": "^3.0.3"
   },
   "dependencies": {
     "@discordjs/rest": "^1.1.0",
     "chalk": "^4.1.2",
     "discord-api-types": "^0.37.5",
-    "discord.js": "^14.3.0",
-    "dotenv": "^16.0.1"
+    "discord.js": "^14.3.0"
   }
 }

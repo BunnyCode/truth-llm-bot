@@ -1,23 +1,21 @@
 module.exports = {
-  name: 'interactionCreate',
+  name: "interactionCreate",
   async execute(interaction, client) {
-    if (interaction.isChatInputCommand()){
-      const { commands } = client
-      const { commandName } = interaction
-      const command = commands.get(commandName)
-      if (!command) return
+    if (interaction.isChatInputCommand()) {
+      const { commands } = client;
+      const { commandName } = interaction;
+      const command = commands.get(commandName);
+      if (!command) return;
 
       try {
-        await command.execute(interaction, client)
+        await command.execute(interaction, client);
       } catch (error) {
-        console.error(error)
+        console.error(error);
         await interaction.reply({
           content: `We effed up, sorry, but command failed.`,
-          epemerial: true
-        })
+          epemerial: true,
+        });
       }
     }
-  }
-}
-
-
+  },
+};
