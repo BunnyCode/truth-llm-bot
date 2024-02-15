@@ -1,7 +1,6 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { execute } = require("../../events/client/ready");
+import { SlashCommandBuilder } from "discord.js";
 
-const reverseCommand = new SlashCommandBuilder()
+export const data = new SlashCommandBuilder()
   .setName("reverse")
   .setDescription("sends back message in reverse.")
   .addStringOption((option) =>
@@ -11,11 +10,8 @@ const reverseCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-module.exports = {
-  data: reverseCommand,
-  async execute(interaction, client) {
-    const message = await interaction.options.getString("input");
-    const newMessage = [...message].reverse().join("");
-    await interaction.reply(newMessage);
-  },
-};
+export async function execute(interaction) {
+  const message = interaction.options.getString("input");
+  const newMessage = [...message].reverse().join("");
+  await interaction.reply(newMessage);
+}

@@ -1,7 +1,6 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { execute } = require("../../events/client/ready");
+import { SlashCommandBuilder } from "discord.js";
 
-const reverseCommand = new SlashCommandBuilder()
+const base64Command = new SlashCommandBuilder()
   .setName("base64")
   .setDescription("sends back message as base64.")
   .addStringOption((option) =>
@@ -11,11 +10,9 @@ const reverseCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-module.exports = {
-  data: reverseCommand,
-  async execute(interaction, client) {
-    const message = await interaction.options.getString("input");
-    const newMessage = Buffer.from(message).toString("base64");
-    await interaction.reply(newMessage);
-  },
-};
+export const data = base64Command;
+export async function execute(interaction, client) {
+  const message = interaction.options.getString("input");
+  const newMessage = Buffer.from(message).toString("base64");
+  await interaction.reply(newMessage);
+}

@@ -1,10 +1,11 @@
-module.exports = {
+export const interactionCreate = {
   name: "interactionCreate",
   async execute(interaction, client) {
     if (interaction.isChatInputCommand()) {
       const { commands } = client;
       const { commandName } = interaction;
       const command = commands.get(commandName);
+
       if (!command) return;
 
       try {
@@ -12,10 +13,12 @@ module.exports = {
       } catch (error) {
         console.error(error);
         await interaction.reply({
-          content: `We effed up, sorry, but command failed.`,
-          epemerial: true,
+          content: `There was an error trying to execute that command!`,
+          ephemeral: true,
         });
       }
     }
   },
 };
+
+export default interactionCreate;

@@ -1,8 +1,9 @@
 {
   "name": "truth-llm-bot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Discord Bot",
   "main": "src/bot.js",
+  "type": "module",
   "scripts": {
     "dev": "nodemon -r dotenv/config src/bot.js",
     "start": "node src/bot.js"

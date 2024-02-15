@@ -1,29 +1,42 @@
-console.log("Starting TruGPT Bot...");
-
-require("dotenv").config();
-const { token } = process.env.DISCORD_TOKEN;
-const {
+import { config } from "dotenv";
+import {
   Client,
   IntentsBitField,
   Collection,
   GatewayIntentBits,
-  SlashCommandBuilder,
-} = require("discord.js");
-const fs = require("fs");
+} from "discord.js";
+import fs from "fs";
 
-const client = new Client({ intents: GatewayIntentBits.Guilds });
+console.log("Starting TruGPT Bot...");
+
+config(); // Initialize dotenv
+const token = process.env.DISCORD_TOKEN;
+
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 client.commands = new Collection();
 client.commandArray = [];
 
-const functionFolders = fs.readdirSync("./src/functions");
+const functionFolders = fs.readdirSync("./src/functions").filter((file) => {
+  return fs.statSync(`./src/functions/${file}`).isDirectory();
+});
+
 for (const folder of functionFolders) {
   const functionFiles = fs
     .readdirSync(`./src/functions/${folder}`)
     .filter((file) => file.endsWith(".js"));
-  for (const file of functionFiles)
-    require(`./functions/${folder}/${file}`)(client);
+  for (const file of functionFiles) {
+    import("./functions/handlers/handleCommands.js").then(
+      (module) => (client.handleCommands = module.default)
+    );
+  }
 }
 
-client.handleEvents();
-client.handleCommands();
+// Assuming handleEvents and handleCommands are properly exported as ES Modules
+import("./functions/handlers/handleEvents.js").then(
+  (module) => (client.handleEvents = module.default)
+);
+import("./functions/handlers/handleCommands.js").then(
+  (module) => (client.handleCommands = module.default)
+);
+
 client.login(token);
