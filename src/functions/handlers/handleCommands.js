@@ -1,40 +1,62 @@
-import { REST } from "@discordjs/rest";
-import { Routes } from "discord-api-types/v9";
-import fs from "fs";
-import { config } from "dotenv";
-config();
+const { REST, Routes } = require("discord.js");
+const dotenv = require("dotenv");
+dotenv.config();
+const fs = require("node:fs");
+const path = require("node:path");
+const token = process.env.DISCORD_TOKEN;
+const clientId = process.env.CLIENT_ID;
+const guildId = process.env.GUILD_ID;
 
-export default (client) => {
-  client.handleCommands = async () => {
-    const commandsFolder = fs.readdirSync("./src/commands");
-    for (const folder of commandsFolder) {
-      const commandFiles = fs
-        .readdirSync(`./src/commands/${folder}`)
-        .filter((file) => file.endsWith(".js"));
+async function deployCommands() {
+  // console.log({ clientId, guildId, token }); // Add this to debug
 
-      for (const file of commandFiles) {
-        // Dynamic import for ES Modules
-        const command = await import(`../../commands/${folder}/${file}`);
-        client.commands.set(command.data.name, command);
-        client.commandArray.push(command.data.toJSON());
-        console.log(`Registered command: ${command.data.name}`);
+  const commands = [];
+  const foldersPath = path.join(__dirname, "../../commands");
+  // Ensure we only process directories within the commands folder
+  const commandFolders = fs.readdirSync(foldersPath).filter((folder) => {
+    const folderPath = path.join(foldersPath, folder);
+    return fs.statSync(folderPath).isDirectory();
+  });
+
+  for (const folder of commandFolders) {
+    const commandsPath = path.join(foldersPath, folder);
+    // Read directory contents and filter out non-JS files and ensure it's a file not a directory
+    const commandFiles = fs.readdirSync(commandsPath).filter((file) => {
+      const filePath = path.join(commandsPath, file);
+      return file.endsWith(".js") && fs.statSync(filePath).isFile();
+    });
+
+    for (const file of commandFiles) {
+      const filePath = path.join(commandsPath, file);
+      const command = require(filePath);
+      if ("data" in command && "execute" in command) {
+        commands.push(command.data.toJSON());
+      } else {
+        console.log(
+          `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+        );
       }
     }
+  }
 
-    const clientId = process.env.CLIENT_ID;
-    const guildId = process.env.GUILD_ID;
-    const rest = new REST({ version: "9" }).setToken(process.env.DISCORD_TOKEN);
+  const rest = new REST({ version: "10" }).setToken(token);
 
-    try {
-      console.log("Refreshing application (/) commands");
+  try {
+    console.log(
+      `Started refreshing ${commands.length} application (/) commands.`
+    );
 
-      await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-        body: client.commandArray,
-      });
+    const data = await rest.put(
+      Routes.applicationGuildCommands(clientId, guildId),
+      { body: commands }
+    );
 
-      console.log("Successfully reloaded application (/) commands");
-    } catch (error) {
-      console.error(error);
-    }
-  };
-};
+    console.log(
+      `Successfully reloaded ${data.length} application (/) commands.`
+    );
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+module.exports = deployCommands;

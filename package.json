@@ -3,7 +3,7 @@
   "version": "1.0.1",
   "description": "Discord Bot",
   "main": "src/bot.js",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "nodemon -r dotenv/config src/bot.js",
     "start": "node src/bot.js"
@@ -15,6 +15,7 @@
   "license": "ISC",
   "devDependencies": {
     "dotenv": "^16.4.4",
+    "eslint": "^8.56.0",
     "nodemon": "^3.0.3"
   },
   "dependencies": {
