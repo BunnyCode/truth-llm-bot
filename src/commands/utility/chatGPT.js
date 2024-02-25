@@ -10,14 +10,15 @@ const chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-const systemMessageContent = await readJsonFile("../gpt/system/version1.json");
-const systemMessage = systemMessageContent.systemMessage;
-
 // Exporting the command data and execute function using CommonJS syntax
 module.exports = {
   data: chatGPTCommand,
   async execute(interaction, client) {
     const message = interaction.options.getString("input");
+    const systemMessageContent = await readJsonFile(
+      "../gpt/system/version1.json"
+    );
+    const systemMessage = systemMessageContent.systemMessage;
 
     const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
 
