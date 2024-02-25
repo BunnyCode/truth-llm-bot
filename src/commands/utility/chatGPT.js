@@ -22,7 +22,7 @@ module.exports = {
   async execute(interaction, client) {
     const message = interaction.options.getString("input");
     const systemMessageContent = await readJsonFile(
-      "../gpt/system/version1.json"
+      "../../gpt/system/version1.json"
     );
     const systemMessage = systemMessageContent.systemMessage;
 
