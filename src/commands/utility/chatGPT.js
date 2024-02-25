@@ -10,6 +10,11 @@ const chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
+async function readJsonFile(filePath) {
+  const data = await fs.readFile(filePath);
+  return JSON.parse(data);
+}
+
 // Exporting the command data and execute function using CommonJS syntax
 module.exports = {
   data: chatGPTCommand,
