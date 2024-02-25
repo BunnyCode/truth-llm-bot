@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs").promises;
+const path = require("path");
 
 const chatGPTCommand = new SlashCommandBuilder()
   .setName("chatgpt")
@@ -21,8 +22,9 @@ module.exports = {
   data: chatGPTCommand,
   async execute(interaction, client) {
     const message = interaction.options.getString("input");
+    const filePath = path.join(__dirname, "../gpt/system/");
     const systemMessageContent = await readJsonFile(
-      "../../gpt/system/version1.json"
+      `${filePath}/version1.json`
     );
     const systemMessage = systemMessageContent.systemMessage;
 
