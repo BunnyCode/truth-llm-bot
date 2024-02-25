@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
+const fs = require("fs").promises;
 
 const chatGPTCommand = new SlashCommandBuilder()
   .setName("chatgpt")
