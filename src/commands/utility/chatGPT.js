@@ -10,7 +10,7 @@ const chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-const systemMessageContent = await readJsonFile("./system/version1.json");
+const systemMessageContent = await readJsonFile("../gpt/system/version1.json");
 const systemMessage = systemMessageContent.systemMessage;
 
 // Exporting the command data and execute function using CommonJS syntax
