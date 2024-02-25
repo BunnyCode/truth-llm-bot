@@ -10,6 +10,9 @@ const chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
+const systemMessageContent = await readJsonFile("./system/version1.json");
+const systemMessage = systemMessageContent.systemMessage;
+
 // Exporting the command data and execute function using CommonJS syntax
 module.exports = {
   data: chatGPTCommand,
@@ -17,26 +20,32 @@ module.exports = {
     const message = interaction.options.getString("input");
 
     const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
-    
+
     // Setting up the request to the OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${ChatGPTAPIKey}`
+        Authorization: `Bearer ${ChatGPTAPIKey}`,
       },
       body: JSON.stringify({
         model: "gpt-4-turbo-preview",
-        messages: [{
-          role: "user",
-          content: message
-        }],
+        messages: [
+          {
+            role: "system",
+            content: systemMessage.v1,
+          },
+          {
+            role: "user",
+            content: message,
+          },
+        ],
         temperature: 0.7,
         max_tokens: 1000,
         top_p: 1,
         frequency_penalty: 0,
-        presence_penalty: 0
-      })
+        presence_penalty: 0,
+      }),
     });
 
     if (!response.ok) {
