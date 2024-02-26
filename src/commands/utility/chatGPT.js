@@ -2,8 +2,20 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs").promises;
 const path = require("path");
 
-const chatGPTCommand = new SlashCommandBuilder()
-  .setName("chatgpt")
+let SET_NAME = "chatgpt";
+if (!process.env.GPT_LOCAL) {
+  console.error(
+    "We are in production mode. Setting the command name to chatgpt."
+  );
+} else {
+  console.log(
+    "Local development mode. Setting the command name to localchatgpt."
+  );
+  SET_NAME = "localchatgpt";
+}
+
+let chatGPTCommand = new SlashCommandBuilder()
+  .setName(`${SET_NAME}`)
   .setDescription("Sends back ChatGPT response.")
   .addStringOption((option) =>
     option
