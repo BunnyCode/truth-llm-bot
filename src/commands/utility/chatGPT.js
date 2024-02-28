@@ -30,7 +30,6 @@ module.exports = {
   async execute(interaction, client) {
     try {
       let message = interaction.options.getString("input");
-      console.log(message);
       // regexp if message starts with -v get the number
       // and remove it from the message
 
