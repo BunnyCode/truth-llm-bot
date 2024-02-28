@@ -2,22 +2,14 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs").promises;
 const path = require("path");
 
-let SET_NAME = "chatgpt";
-if (!process.env.GPT_LOCAL) {
-  console.error(
-    "We are in production mode. Setting the command name to chatgpt."
-  );
-} else {
-  console.log(
-    "Local development mode. Setting the command name to localchatgpt."
-  );
-  SET_NAME = "localchatgpt";
-}
+let SET_NAME = process.env.GPT_LOCAL ? "localchatgpt" : "chatgpt";
+
+console.log(`${process.env.GPT_LOCAL ? "Local development" : "Production"} mode. Setting the command name to ${SET_NAME}.`);
 
 let chatGPTCommand = new SlashCommandBuilder()
   .setName(`${SET_NAME}`)
   .setDescription("Sends back ChatGPT response.")
-  .addStringOption((option) =>
+  .addStringOption(option =>
     option
       .setName("input")
       .setDescription("The input to ChatGPT.")
@@ -29,54 +21,68 @@ async function readJsonFile(filePath) {
   return JSON.parse(data);
 }
 
-// Exporting the command data and execute function using CommonJS syntax
 module.exports = {
   data: chatGPTCommand,
   async execute(interaction, client) {
-    const message = interaction.options.getString("input");
-    const filePath = path.join(__dirname, "../gpt/system/");
-    const systemMessageContent = await readJsonFile(
-      `${filePath}/version1.json`
-    );
-    const systemMessage = systemMessageContent.systemMessage;
+    try {
+      const message = interaction.options.getString("input");
+      const filePath = path.join(__dirname, "../gpt/system/");
+      const systemMessageContent = await readJsonFile(`${filePath}/version1.json`);
+      const systemMessage = systemMessageContent.systemMessage;
+      const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
 
-    const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ChatGPTAPIKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4-turbo-preview",
+          messages: [
+            {
+              role: "system",
+              content: systemMessage.v1,
+            },
+            {
+              role: "user",
+              content: message,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+          top_p: 1,
+          frequency_penalty: 0,
+          presence_penalty: 0,
+        }),
+      });
 
-    // Setting up the request to the OpenAI API
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ChatGPTAPIKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4-turbo-preview",
-        messages: [
-          {
-            role: "system",
-            content: systemMessage.v1,
-          },
-          {
-            role: "user",
-            content: message,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
-      }),
-    });
+      if (!response.ok) {
+        // Ensure no attempt to reply twice to the same interaction
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply("There was an error processing your request.");
+        } else {
+          await interaction.followUp("There was an error processing your request.");
+        }
+        return;
+      }
 
-    if (!response.ok) {
-      await interaction.reply("There was an error processing your request.");
-      return;
+      const data = await response.json();
+      const newMessage = data.choices[0].message.content.trim();
+
+      // Check if interaction has already been replied or deferred
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply(newMessage);
+      } else {
+        await interaction.followUp(newMessage);
+      }
+    } catch (error) {
+      console.error("Error executing command:", error);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply("Failed to execute the command.");
+      } else {
+        await interaction.followUp("Failed to execute the command.");
+      }
     }
-
-    const data = await response.json();
-    const newMessage = data.choices[0].message.content.trim();
-
-    await interaction.reply(newMessage);
   },
 };
