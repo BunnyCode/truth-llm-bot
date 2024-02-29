@@ -25,6 +25,15 @@ async function readJsonFile(filePath) {
   return JSON.parse(data);
 }
 
+function splitMessage(content, maxLength = 2000) {
+  if (!content) { // Checks if content is undefined, null, or empty
+    console.warn("splitMessage was called with undefined or null content.");
+    return []; // Returns an empty array or some other fallback as appropriate
+  }
+  if (content.length <= maxLength) return [content];
+  return content.match(new RegExp('.{1,' + maxLength + '}', 'g'));
+}
+
 module.exports = {
   data: chatGPTCommand,
   async execute(interaction, client) {
@@ -99,19 +108,25 @@ module.exports = {
       const data = await response.json();
       const newMessage = data.choices[0].message.content.trim();
 
-      // Check if interaction has already been replied or deferred
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply(newMessage);
-      } else {
-        await interaction.followUp(newMessage);
-      }
-    } catch (error) {
-      console.error("Error executing command:", error);
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply("Failed to execute the command.");
-      } else {
-        await interaction.followUp("Failed to execute the command.");
-      }
-    }
-  },
+       // Use splitMessage to handle long messages
+       const messageParts = splitMessage(newMessage);
+       if (!interaction.replied && !interaction.deferred) {
+           await interaction.deferReply();
+           for (const part of messageParts) {
+               await interaction.followUp(part);
+           }
+       } else {
+           for (const part of messageParts) {
+               await interaction.followUp(part);
+           }
+       }
+   } catch (error) {
+       console.error("Error executing command:", error);
+       if (!interaction.replied && !interaction.deferred) {
+           await interaction.reply("Failed to execute the command.");
+       } else {
+           await interaction.followUp("Failed to execute the command.");
+       }
+   }
+},
 };
