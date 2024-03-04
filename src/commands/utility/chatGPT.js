@@ -2,16 +2,16 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs").promises;
 const path = require("path");
 
-let SET_NAME = process.env.GPT_LOCAL ? "localchatgpt" : "chatgpt";
+let SLASH_COMMAND_NAME = process.env.GPT_LOCAL ? "localchatgpt" : "chatgpt";
 
 console.log(
   `${
     process.env.GPT_LOCAL ? "Local development" : "Production"
-  } mode. Setting the command name to ${SET_NAME}.`
+  } mode. Setting the command name to ${SLASH_COMMAND_NAME}.`
 );
 
 let chatGPTCommand = new SlashCommandBuilder()
-  .setName(`${SET_NAME}`)
+  .setName(`${SLASH_COMMAND_NAME}`)
   .setDescription("Sends back ChatGPT response.")
   .addStringOption((option) =>
     option
@@ -20,18 +20,20 @@ let chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
+// Read the profile JSON file and parse the data
 async function readJsonFile(filePath) {
   const data = await fs.readFile(filePath);
   return JSON.parse(data);
 }
 
 function splitMessage(content, maxLength = 2000) {
-  if (!content) { // Checks if content is undefined, null, or empty
+  if (!content) {
+    // Checks if content is undefined, null, or empty
     console.warn("splitMessage was called with undefined or null content.");
     return []; // Returns an empty array or some other fallback as appropriate
   }
   if (content.length <= maxLength) return [content];
-  return content.match(new RegExp('.{1,' + maxLength + '}', 'g'));
+  return content.match(new RegExp(".{1," + maxLength + "}", "g"));
 }
 
 module.exports = {
@@ -44,8 +46,8 @@ module.exports = {
 
       let version;
       if (message.startsWith("-v")) {
-        version = message.match(/^-(v\d+)\s/)[1];
-        message = message.replace(/^-v\d+\s/, "");
+        version = message.match(/^-v(\w+)\s/)[1];
+        message = message.replace(/^-v\w+\s/, "");
       }
       console.log(message, version);
 
@@ -108,25 +110,25 @@ module.exports = {
       const data = await response.json();
       const newMessage = data.choices[0].message.content.trim();
 
-       // Use splitMessage to handle long messages
-       const messageParts = splitMessage(newMessage);
-       if (!interaction.replied && !interaction.deferred) {
-           await interaction.deferReply();
-           for (const part of messageParts) {
-               await interaction.followUp(part);
-           }
-       } else {
-           for (const part of messageParts) {
-               await interaction.followUp(part);
-           }
-       }
-   } catch (error) {
-       console.error("Error executing command:", error);
-       if (!interaction.replied && !interaction.deferred) {
-           await interaction.reply("Failed to execute the command.");
-       } else {
-           await interaction.followUp("Failed to execute the command.");
-       }
-   }
-},
+      // Use splitMessage to handle long messages
+      const messageParts = splitMessage(newMessage);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.deferReply();
+        for (const part of messageParts) {
+          await interaction.followUp(part);
+        }
+      } else {
+        for (const part of messageParts) {
+          await interaction.followUp(part);
+        }
+      }
+    } catch (error) {
+      console.error("Error executing command:", error);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply("Failed to execute the command.");
+      } else {
+        await interaction.followUp("Failed to execute the command.");
+      }
+    }
+  },
 };
