@@ -1,6 +1,9 @@
 const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs").promises;
 const path = require("path");
+const { fileURLToPath } = require("url");
+const discordFunctions = require(path.join(__dirname, "../../helpers/discordFunctions"));
+const dF = new discordFunctions
 
 let SLASH_COMMAND_NAME = process.env.GPT_LOCAL ? "localchatgpt" : "chatgpt";
 
@@ -20,22 +23,6 @@ let chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-// Read the profile JSON file and parse the data
-async function readJsonFile(filePath) {
-  const data = await fs.readFile(filePath);
-  return JSON.parse(data);
-}
-
-function splitMessage(content, maxLength = 2000) {
-  if (!content) {
-    // Checks if content is undefined, null, or empty
-    console.warn("splitMessage was called with undefined or null content.");
-    return []; // Returns an empty array or some other fallback as appropriate
-  }
-  if (content.length <= maxLength) return [content];
-  return content.match(new RegExp(".{1," + maxLength + "}", "g"));
-}
-
 module.exports = {
   data: chatGPTCommand,
   async execute(interaction, client) {
@@ -44,6 +31,10 @@ module.exports = {
       // regexp if message starts with -v get the number
       // and remove it from the message
 
+      // Read the profile JSON file and parse the data
+      const filePath = path.join(__dirname, "../gpt/system/version1.json");
+      const botSystemVersion = await dF.botSystemProfile(filePath)
+
       let version;
       if (message.startsWith("-v")) {
         version = message.match(/^-v(\w+)\s/)[1];
@@ -51,17 +42,14 @@ module.exports = {
       }
       console.log(message, version);
 
-      const filePath = path.join(__dirname, "../gpt/system/");
-      const systemMessageContent = await readJsonFile(
-        `${filePath}/version1.json`
-      );
+      const systemMessageContent = botSystemVersion
 
       // Get the version of the system message
       const systemMessage = systemMessageContent.systemMessage;
       let systemMessageVersion = version
         ? systemMessage[version]
         : systemMessage.v1;
-      console.log(systemMessageVersion);
+
       const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
 
       const response = await fetch(
@@ -78,6 +66,10 @@ module.exports = {
               {
                 role: "system",
                 content: systemMessageVersion,
+              },
+              {
+                role: "assistant",
+                content: "Super short answers only! ALWAYS GIVE AN ANSWER BETWEEN 0 and 100",
               },
               {
                 role: "user",
@@ -111,7 +103,7 @@ module.exports = {
       const newMessage = data.choices[0].message.content.trim();
 
       // Use splitMessage to handle long messages
-      const messageParts = splitMessage(newMessage);
+      const messageParts = dF.splitMessage(newMessage);
       if (!interaction.replied && !interaction.deferred) {
         await interaction.deferReply();
         for (const part of messageParts) {

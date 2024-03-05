@@ -9,19 +9,12 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const deployCommands = require("./functions/handlers/handleCommands");
+const discordFunctions = require(path.join(__dirname, "./helpers/discordFunctions"));
+const dF = new discordFunctions();
 
 const token = process.env.DISCORD_TOKEN;
 
 // Revised splitMessage function with a check for undefined content
-function splitMessage(content, maxLength = 2000) {
-  if (!content) { // Checks if content is undefined, null, or empty
-    console.warn("splitMessage was called with undefined or null content.");
-    return []; // Returns an empty array or some other fallback as appropriate
-  }
-  if (content.length <= maxLength) return [content];
-  return content.match(new RegExp('.{1,' + maxLength + '}', 'g'));
-}
-
 
 try {
   console.log("Starting TruGPT Bot...");
@@ -77,7 +70,7 @@ try {
         const responses = await command.execute(interaction);
         // Check and split the message if it's too long
         (Array.isArray(responses) ? responses : [responses]).forEach(async response => {
-          splitMessage(response).forEach(async part => {
+          dF.splitMessage(response).forEach(async part => {
             await interaction.followUp({ content: part, ephemeral: true }).catch(console.error);
           });
         });
