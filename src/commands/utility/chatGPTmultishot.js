@@ -87,6 +87,8 @@ module.exports = {
         // Handle error, for example by sending an error message to the user
       }
 
+      // TODO: Add the combined score for all parameters before splitmessage.
+
       // Use splitMessage to handle long messages
       const messageParts = dF.splitMessage(newMessage);
       if (!interaction.replied && !interaction.deferred) {
