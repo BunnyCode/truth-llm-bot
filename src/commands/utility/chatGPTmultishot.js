@@ -30,7 +30,7 @@ const chatGPTCommand = new SlashCommandBuilder()
 
 module.exports = {
   data: chatGPTCommand,
-  async execute(interaction, client) {
+  async execute(interaction) {
     try {
       const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
       const message = interaction.options.getString('input');
