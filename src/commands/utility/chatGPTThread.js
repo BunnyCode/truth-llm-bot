@@ -69,7 +69,7 @@ module.exports = {
         thread.id,
         { 
           assistant_id: assistant.id,
-          instructions: "Please address the user as Jane Doe. The user has a premium account."
+          instructions: "Provide a score from 0 to 100 and identifying keywords for further validation."
         }
       );
 
@@ -86,12 +86,22 @@ module.exports = {
           run.thread_id
         );
         for (const message of messages.data.reverse()) {
-          console.log(`${message.role} > ${message.content[0].text.value}`);
+          const messageParts = dF.splitMessage(message.content[0].text.value);
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.deferReply();
+            for (const part of messageParts) {
+              await interaction.followUp(part);
+            }
+          }
+          else {
+            for (const part of messageParts) {
+              await interaction.followUp(part);
+            }
+          }
         }
       } else {
         console.log(run.status);
       }
-
     } catch (error) {
       console.error('Error executing command:', error);
       if (!interaction.replied && !interaction.deferred) {
@@ -103,54 +113,32 @@ module.exports = {
   },
 };
 async function createAssistant(instruction) {
-  const response = await fetch('https://api.openai.com/v1/assistants', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Beta': 'assistants=v1'
-    },
-    body: JSON.stringify({
-      "instructions": `${instruction}`,
-      "name": "Math Tutor",
-      "tools": [{"type": "code_interpreter"}],
-      "model": "gpt-4"
-    })
+  const assistant = await openai.beta.assistants.create({
+    name: "Math Tutor",
+    instructions: instruction,
+    tools: [{ type: "retrieval" }],
+    model: "gpt-4-turbo-preview"
   });
-  const data = await response.json();
 
-  return data;
+
+  return assistant;
 }
 
 async function createThread() {
-  const response = await fetch('https://api.openai.com/v1/threads', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Beta': 'assistants=v1'
-    },
-    body: '{}'
-  });
-  const data = await response.json();
+  thread = await openai.beta.threads.create();
 
-  return data;
+  return thread;
 }
 
 async function createMessage(threadId, message) {
-  const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      'OpenAI-Beta': 'assistants=v1'
-    },
-      body: JSON.stringify({
-        role: "user",
-        content: `${message}`
-      })
-    });
-  const data = await response.json();
+  const message2 = await openai.beta.threads.messages.create(
+    threadId,
+    {
+      role: "user",
+      content: message
+    }
+  );
+  
 
-  return data;
+  return message2;
 }
