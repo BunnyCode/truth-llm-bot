@@ -1,15 +1,15 @@
-const dotenv = require("dotenv");
+const dotenv = require('dotenv');
 dotenv.config();
-const path = require("node:path");
-const { Client, Events, Collection, GatewayIntentBits } = require("discord.js");
-const fs = require("fs");
+const path = require('node:path');
+const { Client, Events, Collection, GatewayIntentBits } = require('discord.js');
+const fs = require('fs');
 
-const express = require("express");
+const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-const deployCommands = require("./functions/handlers/handleCommands");
-const discordFunctions = require(path.join(__dirname, "./helpers/discordFunctions"));
+const deployCommands = require('./functions/handlers/handleCommands');
+const discordFunctions = require(path.join(__dirname, './helpers/discordFunctions'));
 const dF = new discordFunctions();
 
 const token = process.env.DISCORD_TOKEN;
@@ -17,18 +17,18 @@ const token = process.env.DISCORD_TOKEN;
 // Revised splitMessage function with a check for undefined content
 
 try {
-  console.log("Starting TruGPT Bot...");
+  console.log('Starting TruGPT Bot...');
   deployCommands().then(() => {
     // Health check endpoint
-    app.get("/health", (req, res) => {
-      res.status(200).send("OK");
+    app.get('/health', (req, res) => {
+      res.status(200).send('OK');
     });
 
     // Create a new client instance
     const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
     client.commands = new Collection();
-    const foldersPath = path.join(__dirname, "./commands");
+    const foldersPath = path.join(__dirname, './commands');
     // Filter out all non-directories
     const commandFolders = fs.readdirSync(foldersPath).filter((folder) => {
       return fs.statSync(path.join(foldersPath, folder)).isDirectory();
@@ -38,17 +38,18 @@ try {
       const commandsPath = path.join(foldersPath, folder);
       const commandFiles = fs
         .readdirSync(commandsPath)
-        .filter((file) => file.endsWith(".js"));
+        .filter((file) => file.endsWith('.js'));
       for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
         // Set a new item in the Collection
-        if ("data" in command && "execute" in command) {
+        if ('data' in command && 'execute' in command) {
           client.commands.set(command.data.name, command);
           console.log(`Created "${command.data.name}" command.`);
-        } else {
+        }
+        else {
           console.log(
-            `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+            `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
           );
         }
       }
@@ -74,10 +75,11 @@ try {
             await interaction.followUp({ content: part, ephemeral: true }).catch(console.error);
           });
         });
-      } catch (error) {
+      }
+      catch (error) {
         console.error(error);
         await interaction.followUp({
-          content: "There was an error while executing this command!",
+          content: 'There was an error while executing this command!',
           ephemeral: true,
         }).catch(console.error);
       }
@@ -96,6 +98,7 @@ try {
       console.log(`Server is running on port ${PORT}`);
     });
   });
-} catch (error) {
+}
+catch (error) {
   console.error(error);
 }

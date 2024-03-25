@@ -1,12 +1,12 @@
-const gpt = require("../src/commands/utility/chatGPT");
+const gpt = require('../src/commands/utility/chatGPT');
 
 const interaction = {
   options: {
-    getString: function (key) {
+    getString: function(key) {
       // Mock getString function
       return this[key];
     },
-    input: "Hello, World!",
+    input: 'Hello, World!',
   },
 };
 
