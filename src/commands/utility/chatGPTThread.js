@@ -2,12 +2,18 @@ const { SlashCommandBuilder } = require("discord.js");
 const fs = require("fs").promises;
 const path = require("path");
 const { fileURLToPath } = require("url");
-const discordFunctions = require(path.join(__dirname, "../../helpers/discordFunctions"));
-const dF = new discordFunctions
+const scrape = require("../../functions/scrape/scaper");
+const discordFunctions = require(path.join(
+  __dirname,
+  "../../helpers/discordFunctions"
+));
+const dF = new discordFunctions();
 const OpenAI = require("openai");
-const openai = new OpenAI( {apiKey: process.env.CHATGPT_API_KEY} );
+const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
 
-let SLASH_COMMAND_NAME = process.env.GPT_LOCAL ? "localchatgptthread" : "chatgptthread";
+let SLASH_COMMAND_NAME = process.env.GPT_LOCAL
+  ? "localchatgptthread"
+  : "chatgptthread";
 const OPENAI_API_KEY = process.env.CHATGPT_API_KEY;
 
 console.log(
@@ -30,14 +36,13 @@ module.exports = {
   data: chatGPTCommand,
   async execute(interaction, client) {
     try {
-      
       let message = interaction.options.getString("input");
       // regexp if message starts with -v get the number
       // and remove it from the message
 
       // Read the profile JSON file and parse the data
       const filePath = path.join(__dirname, "../gpt/system/version1.json");
-      const botSystemVersion = await dF.botSystemProfile(filePath)
+      const botSystemVersion = await dF.botSystemProfile(filePath);
 
       let version;
       if (message.startsWith("-v")) {
@@ -46,7 +51,7 @@ module.exports = {
       }
       console.log(message, version);
 
-      const systemMessageContent = botSystemVersion
+      const systemMessageContent = botSystemVersion;
 
       // Get the version of the system message
       const systemMessage = systemMessageContent.systemMessage;
@@ -56,44 +61,38 @@ module.exports = {
 
       // Step 1: Create an Assistant
       const assistant = await createAssistant(version);
-      console.log('Assistant created:', assistant);
+      console.log("Assistant created:", assistant);
 
       // Step 2: Create a Thread
       const thread = await createThread();
-      console.log('Thread created:', thread);
+      console.log("Thread created:", thread);
 
       const messageCreated = await createMessage(thread.id, message);
-      console.log('Message created:', messageCreated);;
+      console.log("Message created:", messageCreated);
 
-      let run = await openai.beta.threads.runs.create(
-        thread.id,
-        { 
-          assistant_id: assistant.id,
-          instructions: "Provide a score from 0 to 100 and identifying keywords for further validation."
-        }
-      );
+      let run = await openai.beta.threads.runs.create(thread.id, {
+        assistant_id: assistant.id,
+        instructions:
+          "Provide a score from 0 to 100 and identifying keywords for further validation.",
+      });
 
-      while (['queued', 'in_progress', 'cancelling'].includes(run.status)) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
-        run = await openai.beta.threads.runs.retrieve(
-          run.thread_id,
-          run.id
-        );
+      while (["queued", "in_progress", "cancelling"].includes(run.status)) {
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+        run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
       }
 
-      if (run.status === 'completed') {
-        const messages = await openai.beta.threads.messages.list(
-          run.thread_id
-        );
+      if (run.status === "completed") {
+        const messages = await openai.beta.threads.messages.list(run.thread_id);
         for (const message of messages.data.reverse()) {
           const messageParts = dF.splitMessage(message.content[0].text.value);
+          console.log(part);
+          if (part.includes("Keywords:")) {
+            const keywordsPattern = /Keywords:\s*(.*)/;
+            const matches = part.match(keywordsPattern);
+            console.log(matches);
+          }
           if (!interaction.replied && !interaction.deferred) {
             await interaction.deferReply();
-            for (const part of messageParts) {
-              await interaction.followUp(part);
-            }
-          }
-          else {
             for (const part of messageParts) {
               await interaction.followUp(part);
             }
@@ -103,11 +102,11 @@ module.exports = {
         console.log(run.status);
       }
     } catch (error) {
-      console.error('Error executing command:', error);
+      console.error("Error executing command:", error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply('Failed to execute the command.');
+        await interaction.reply("Failed to execute the command.");
       } else {
-        await interaction.followUp('Failed to execute the command.');
+        await interaction.followUp("Failed to execute the command.");
       }
     }
   },
@@ -117,9 +116,8 @@ async function createAssistant(instruction) {
     name: "Math Tutor",
     instructions: instruction,
     tools: [{ type: "retrieval" }],
-    model: "gpt-4-turbo-preview"
+    model: "gpt-4-turbo-preview",
   });
-
 
   return assistant;
 }
@@ -131,14 +129,10 @@ async function createThread() {
 }
 
 async function createMessage(threadId, message) {
-  const message2 = await openai.beta.threads.messages.create(
-    threadId,
-    {
-      role: "user",
-      content: message
-    }
-  );
-  
+  const message2 = await openai.beta.threads.messages.create(threadId, {
+    role: "user",
+    content: message,
+  });
 
   return message2;
 }
