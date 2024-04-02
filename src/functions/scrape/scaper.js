@@ -38,15 +38,14 @@ async function searchWithDiff(query) {
     `https://www.google.com/search?q=${query}`
   );
 
-  console.log("topResultsUrl", topResultsUrl);
+  return JSON.stringify(topResultsUrl);
+  // const selectedIndex = await getChoise(topResultsUrl);
 
-  const selectedIndex = await getChoise(topResultsUrl);
+  // const chosenArticle = topResultsUrl[selectedIndex].link;
 
-  const chosenArticle = topResultsUrl[selectedIndex].link;
-
-  console.log("chosenArticle", chosenArticle);
-  const article = await diffSearch.article(chosenArticle);
-  console.log("article", article);
+  // console.log("chosenArticle", chosenArticle);
+  // const article = await diffSearch.article(chosenArticle);
+  // console.log("article", article);
 }
 
 module.exports = searchWithDiff;

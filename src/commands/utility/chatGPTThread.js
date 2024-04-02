@@ -70,37 +70,9 @@ module.exports = {
       const messageCreated = await createMessage(thread.id, message);
       console.log("Message created:", messageCreated);
 
-      let run = await openai.beta.threads.runs.create(thread.id, {
-        assistant_id: assistant.id,
-        instructions:
-          "Provide a score from 0 to 100 and identifying keywords for further validation.",
-      });
+      const instruction = "Provide a score from 0 to 100. Every response to assessments will be structured with a \"Score: \" followed by the numerical value, and \"Keywords: \" (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise list of keywords relevant to the content's claim accuracy for users to use as references for further validation.";
 
-      while (["queued", "in_progress", "cancelling"].includes(run.status)) {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
-        run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
-      }
-
-      if (run.status === "completed") {
-        const messages = await openai.beta.threads.messages.list(run.thread_id);
-        for (const message of messages.data.reverse()) {
-          const messageParts = dF.splitMessage(message.content[0].text.value);
-          console.log(part);
-          if (part.includes("Keywords:")) {
-            const keywordsPattern = /Keywords:\s*(.*)/;
-            const matches = part.match(keywordsPattern);
-            console.log(matches);
-          }
-          if (!interaction.replied && !interaction.deferred) {
-            await interaction.deferReply();
-            for (const part of messageParts) {
-              await interaction.followUp(part);
-            }
-          }
-        }
-      } else {
-        console.log(run.status);
-      }
+      waitForGPT(thread, assistant, instruction, interaction);
     } catch (error) {
       console.error("Error executing command:", error);
       if (!interaction.replied && !interaction.deferred) {
@@ -135,4 +107,70 @@ async function createMessage(threadId, message) {
   });
 
   return message2;
+}
+
+async function waitForGPT(thread, assistant, instruction, interaction) {
+  let run = await openai.beta.threads.runs.create(thread.id, {
+    assistant_id: assistant.id,
+    instructions:
+      instruction,
+  });
+
+  while (["queued", "in_progress", "cancelling"].includes(run.status)) {
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+    run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
+  }
+
+  if (run.status === "completed") {
+    const messages = await openai.beta.threads.messages.list(run.thread_id);
+    console.log('messages', messages);
+    for (const message of messages.data) {
+      console.log('message', message);
+      const messageParts = dF.splitMessage(message.content[0].text.value);
+      console.log('messageParts', messageParts);
+      for (const part of messageParts) {
+        const keywordsPattern = /Keywords:\s*(.*)/;
+        const matches = part.match(keywordsPattern);
+        console.log('matches', matches);
+
+        if (matches !== null) {
+          const instruction = "Here is an array of objects, select the one that is most relevant to your search. BUT ONLY REPLY WITH THE NUMBER!!"
+          waitForGPT(thread, assistant, instruction, interaction)
+        }
+      }
+    }
+  } else {
+    console.log(run.status);
+  }
+
+
+
+  // const topResultsUrl = scrape(keywords[0])
+  // const message = 'Here are the top results for your search: \n' + topResultsUrl
+  // const messageCreated = await createMessage(thread.id, message);
+  // console.log("Message created:", messageCreated);
+
+  // let run = await openai.beta.threads.runs.create(thread.id, {
+  //   assistant_id: assistant.id,
+  //   instructions: instruction
+  // });
+
+  // while (["queued", "in_progress", "cancelling"].includes(run.status)) {
+  //   await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+  //   run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
+  // }
+
+  // if (run.status === "completed") {
+  //   const messages = await openai.beta.threads.messages.list(run.thread_id);
+  //   console.log('messages', messages);
+  //   for (const message of messages.data) {
+  //     console.log('message', message);
+  //     const messageParts = dF.splitMessage(message.content[0].text.value);
+  //     console.log('messageParts', messageParts);
+  //     for (const part of messageParts) {
+  //       await interaction.followUp(part);
+  //     }
+  //   }
+  // }
+  // return keywords
 }

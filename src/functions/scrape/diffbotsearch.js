@@ -14,19 +14,13 @@ class DiffbotWebSearch {
     return data.objects[0].items;
   }
 
-  article(url) {
-    sdk.auth(diffbotApiKey);
-    return sdk
-      .article({ url })
-      .then(({ data }) => {
-        // Extract the data returned as a variable
-        const extractedData = data;
-        return extractedData;
-      })
-      .catch((err) => {
-        console.error(err);
-        throw err;
-      });
+  async article(url) {
+    
+    const response = await fetch(`https://api.diffbot.com/v3/analyze?url=${url}&token=${diffbotApiKey}`);
+    const data = await response.json();
+
+    console.log("data", data);
+    return data
   }
 }
 
