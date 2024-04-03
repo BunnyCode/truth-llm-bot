@@ -1,11 +1,13 @@
 const { SlashCommandBuilder } = require('discord.js');
-const searchInternet = require('../../functions/scrape/scaper');
+const [searchInternet, analyzeWithDiff] = require('../../functions/scrape/scaper');
 global.searchInternet = searchInternet;
+global.analyzeWithDiff = analyzeWithDiff;
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
+const [createThread, createAssistant, createMessage] = require('../../helpers/threadedGPTHelper');
 
 const SLASH_COMMAND_NAME = process.env.GPT_LOCAL
-  ? 'localchatgptthread'
+  ? 'localchatgptthread2'
   : 'chatgptthread';
 
 console.log(
@@ -39,14 +41,14 @@ module.exports = {
       console.log(message, version);
 
       // Step 1: Create an Assistant
-      const assistant = await createAssistant(version);
+      const assistant = await createAssistant(openai, version);
       console.log('Assistant created:', assistant);
 
       // Step 2: Create a Thread
-      const thread = await createThread();
+      const thread = await createThread(openai);
       console.log('Thread created:', thread);
 
-      const messageCreated = await createMessage(thread.id, message);
+      const messageCreated = await createMessage(openai, thread.id, message);
       console.log('Message created:', messageCreated);
 
       const instruction = 'Provide a score from 0 to 100. Every response to assessments will be structured with a "Score: " followed by the numerical value, and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise list of keywords relevant to the content\'s claim accuracy for users to use as references for further validation.';
@@ -64,58 +66,7 @@ module.exports = {
     }
   },
 };
-async function createAssistant(instruction) {
-  const assistant = await openai.beta.assistants.create({
-    instructions: instruction,
-    model: 'gpt-4',
-    tools: [{
-      type: 'function',
-      function: {
-        name: 'getArticle',
-        description: 'Get the article from the list of URLs.',
-        parameters: {
-          type: 'object',
-          properties: {
-            url: { type: 'string', description: 'URL from list to corresponding article' },
-          },
-          required: ['url'],
-        },
-      },
-    },
-    {
-      type: 'function',
-      function: {
-        name: 'searchInternet',
-        description: 'Search the internet for the query.',
-        parameters: {
-          type: 'object',
-          properties: {
-            searchstring: { type: 'string', description: 'Keywords you want to search for' },
-          },
-          required: ['searchstring'],
-        },
-      },
-    },
-    ],
-  });
 
-  return assistant;
-}
-
-async function createThread() {
-  const thread = await openai.beta.threads.create();
-
-  return thread;
-}
-
-async function createMessage(threadId, message) {
-  const message2 = await openai.beta.threads.messages.create(threadId, {
-    role: 'user',
-    content: message,
-  });
-
-  return message2;
-}
 
 async function waitForGPT(thread, assistant, instruction, interaction) {
   try {
@@ -130,20 +81,16 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
     );
 
     // Polling mechanism to see if runStatus is completed
+    let isAvailable = true;
     while (runStatus.status !== 'completed') {
-      let isRunning = false;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (!isRunning) {
-        runStatus = await openai.beta.threads.runs.retrieve(
-          thread.id,
-          run.id,
-        );
-        console.log('runStatus:', runStatus.status);
-        if (runStatus.status === 'requires_action') {
-          //   console.log(
-          //     runStatus.required_action.submit_tool_outputs.tool_calls
-          //   );
-          isRunning = true;
+      runStatus = await openai.beta.threads.runs.retrieve(
+        thread.id,
+        run.id,
+      );
+      if (runStatus.status === 'requires_action') {
+
+        if (isAvailable) {
+          isAvailable = false;
           useTool(runStatus, thread, run);
           continue;
         }
@@ -156,6 +103,9 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
         );
         break;
       }
+      console.log('runStatus:', runStatus.status);
+      // Timer for 1 second
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
   catch (error) {
