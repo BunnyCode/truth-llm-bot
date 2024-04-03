@@ -9,6 +9,7 @@ const discordFunctions = require(path.join(
 ));
 const dF = new discordFunctions();
 const OpenAI = require("openai");
+const { create } = require("domain");
 const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
 
 let SLASH_COMMAND_NAME = process.env.GPT_LOCAL
@@ -110,67 +111,114 @@ async function createMessage(threadId, message) {
 }
 
 async function waitForGPT(thread, assistant, instruction, interaction) {
-  let run = await openai.beta.threads.runs.create(thread.id, {
-    assistant_id: assistant.id,
-    instructions:
-      instruction,
-  });
+  try {
+    let run = await openai.beta.threads.runs.create(thread.id, {
+      assistant_id: assistant.id,
+      instructions: instruction,
+    });
 
-  while (["queued", "in_progress", "cancelling"].includes(run.status)) {
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
-    run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
-  }
+    while (["queued", "in_progress", "cancelling"].includes(run.status)) {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+      run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
+    }
+    if (run.status === 'completed') {
+      const messages = await openai.beta.threads.messages.list(run.thread_id);
+      // Assuming the messages are already in reverse chronological order
+      let isFirstMessage = true; // Flag to identify the first message in the loop
+      for (const message of messages.data) {
+        let messageParts;
+        if (isFirstMessage) {
+          // Special handling for the first message, if required
+          isFirstMessage = false;
+          // Assuming special processing or simply proceed with the existing logic
+          messageParts = dF.splitMessage(message.content[0].text.value);
+        } else {
+          // Existing logic for keyword detection and follow-up
+          messageParts = dF.splitMessage(message.content[0].text.value);
+        }
 
-  if (run.status === "completed") {
-    const messages = await openai.beta.threads.messages.list(run.thread_id);
-    console.log('messages', messages);
-    for (const message of messages.data) {
-      console.log('message', message);
-      const messageParts = dF.splitMessage(message.content[0].text.value);
-      console.log('messageParts', messageParts);
-      for (const part of messageParts) {
-        const keywordsPattern = /Keywords:\s*(.*)/;
-        const matches = part.match(keywordsPattern);
-        console.log('matches', matches);
+        for (const part of messageParts) {
+          const keywordsPattern = /Keywords:\s*(.*)/;
+          const matches = part.match(keywordsPattern);
+          if (matches) {
+            let instruction = `Return the number from the search result for the source you want to use as reference from the following keywords: ${matches[1]}`;
+            const assistant = await createAssistant(instruction);
+            const scrapeMessage = await scrape(matches[1])
+            const newScrapeMessage = `Return the number from the search result for the source you want to use as reference from the following sources: ${scrapeMessage}`;
+            console.log("Scrape message1:", newScrapeMessage);
+            const newMessage = await createMessage(thread.id, newScrapeMessage);
+            console.log("Message created1:", newMessage);
 
-        if (matches !== null) {
-          const instruction = "Here is an array of objects, select the one that is most relevant to your search. BUT ONLY REPLY WITH THE NUMBER!!"
-          waitForGPT(thread, assistant, instruction, interaction)
+            let run = await openai.beta.threads.runs.create(thread.id, {
+              assistant_id: assistant.id,
+              instructions: instruction,
+            });
+
+            while (["queued", "in_progress", "cancelling"].includes(run.status)) {
+              await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+              run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
+            }
+            if (run.status === 'completed') {
+              const messages = await openai.beta.threads.messages.list(run.thread_id);
+              for (const message of messages.data.reverse()) {
+                console.log("message1", message);
+                const messageParts = dF.splitMessage(message.content[0].text.value);
+                for (const part of messageParts) {
+                  console.log("part1", part);
+
+                  // if part is a number
+                  if (part.match(/^\d+$/)) {
+                    const number = parseInt(part);
+                    console.log("number1", number);
+
+                    // Variable here!! :D
+                    const newMessage = await createMessage(thread.id, scrapeMessage[number]);
+                    console.log("Message created2:", newMessage);
+
+                    let run = await openai.beta.threads.runs.create(
+                      thread.id,
+                      { 
+                        assistant_id: assistant.id,
+                        instructions: "Provide a score from 0 to 100 and identifying keywords for further validation."
+                      }
+                    );
+              
+                    while (['queued', 'in_progress', 'cancelling'].includes(run.status)) {
+                      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for 1 second
+                      run = await openai.beta.threads.runs.retrieve(
+                        run.thread_id,
+                        run.id
+                      );
+                    }
+              
+                    if (run.status === 'completed') {
+                      const messages = await openai.beta.threads.messages.list(
+                        run.thread_id
+                      );
+                      for (const message of messages.data.reverse()) {
+                        const messageParts = dF.splitMessage(message.content[0].text.value);
+                        await interaction.deferReply();
+                        
+                        for (const part of messageParts) {
+                          console.log("part2", part);
+                          await interaction.followUp(part);
+                        }
+                      }
+                    }
+                  }
+                  await interaction.followUp(part);
+                }
+              }
+            }
+          }
         }
       }
+    } else {
+      console.error("Run did not complete successfully:", run.status);
+      await interaction.followUp("There was an issue processing your request.");
     }
-  } else {
-    console.log(run.status);
+  } catch (error) {
+    console.error("Error in waitForGPT:", error);
+    await interaction.followUp("An error occurred while processing your request.");
   }
-
-
-
-  // const topResultsUrl = scrape(keywords[0])
-  // const message = 'Here are the top results for your search: \n' + topResultsUrl
-  // const messageCreated = await createMessage(thread.id, message);
-  // console.log("Message created:", messageCreated);
-
-  // let run = await openai.beta.threads.runs.create(thread.id, {
-  //   assistant_id: assistant.id,
-  //   instructions: instruction
-  // });
-
-  // while (["queued", "in_progress", "cancelling"].includes(run.status)) {
-  //   await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
-  //   run = await openai.beta.threads.runs.retrieve(run.thread_id, run.id);
-  // }
-
-  // if (run.status === "completed") {
-  //   const messages = await openai.beta.threads.messages.list(run.thread_id);
-  //   console.log('messages', messages);
-  //   for (const message of messages.data) {
-  //     console.log('message', message);
-  //     const messageParts = dF.splitMessage(message.content[0].text.value);
-  //     console.log('messageParts', messageParts);
-  //     for (const part of messageParts) {
-  //       await interaction.followUp(part);
-  //     }
-  //   }
-  // }
-  // return keywords
 }
