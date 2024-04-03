@@ -99,12 +99,12 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
       // Check for failed, cancelled, or expired status
       if (['failed', 'cancelled', 'expired'].includes(runStatus.status)) {
         console.log(
-          `Run status is '${runStatus.status}'. Unable to complete the request.`,
+          `Run status is '${runStatus.status}'. Unable to complete request.`,
         );
         break;
       }
       console.log('runStatus:', runStatus.status);
-      // Timer for 1 second
+      // Timer for 2 second
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }

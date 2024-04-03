@@ -11,8 +11,8 @@ class MultiCallGPT {
   }
 
   async execute() {
-    let responses = [];
-    for (let call of this.calls) {
+    const responses = [];
+    for (const call of this.calls) {
       responses.push(await call());
     }
     return responses;
