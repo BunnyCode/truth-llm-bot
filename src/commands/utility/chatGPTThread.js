@@ -67,7 +67,7 @@ module.exports = {
 async function createAssistant(instruction) {
   const assistant = await openai.beta.assistants.create({
     instructions: instruction,
-    model: 'gpt-4-turbo-preview',
+    model: 'gpt-4',
     tools: [{
       type: 'function',
       function: {
@@ -131,46 +131,22 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
 
     // Polling mechanism to see if runStatus is completed
     while (runStatus.status !== 'completed') {
+      let isRunning = false;
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(
-        thread.id,
-        run.id,
-      );
-      console.log('runStatus:', runStatus.status);
-      if (runStatus.status === 'requires_action') {
-        //   console.log(
-        //     runStatus.required_action.submit_tool_outputs.tool_calls
-        //   );
-        const toolCalls =
-          runStatus.required_action.submit_tool_outputs.tool_calls;
-        const toolOutputs = [];
-
-        for (const toolCall of toolCalls) {
-          const functionName = toolCall.function.name;
-
-          console.log(
-            `This question requires us to call a function: ${functionName}`,
-          );
-
-          const args = JSON.parse(toolCall.function.arguments);
-
-          // const argsArray = Object.keys(args).map((key) => args[key]);
-
-          // Dynamically call the function with arguments
-          const output = await global[functionName].apply(null, [args]);
-          console.log('output:', output);
-          toolOutputs.push({
-            tool_call_id: toolCall.id,
-            output: output,
-          });
-        }
-        // Submit tool outputs
-        await openai.beta.threads.runs.submitToolOutputs(
+      if (!isRunning) {
+        runStatus = await openai.beta.threads.runs.retrieve(
           thread.id,
           run.id,
-          { tool_outputs: toolOutputs },
         );
-        continue;
+        console.log('runStatus:', runStatus.status);
+        if (runStatus.status === 'requires_action') {
+          //   console.log(
+          //     runStatus.required_action.submit_tool_outputs.tool_calls
+          //   );
+          isRunning = true;
+          useTool(runStatus, thread, run);
+          continue;
+        }
       }
 
       // Check for failed, cancelled, or expired status
@@ -186,4 +162,36 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
     console.error('Error in waitForGPT:', error);
     await interaction.followUp('An error occurred while processing your request.');
   }
+}
+
+async function useTool(runStatus, thread, run) {
+  const toolCalls =
+    runStatus.required_action.submit_tool_outputs.tool_calls;
+  const toolOutputs = [];
+
+  for (const toolCall of toolCalls) {
+    const functionName = toolCall.function.name;
+
+    console.log(
+      `This question requires us to call a function: ${functionName}`,
+    );
+
+    const args = JSON.parse(toolCall.function.arguments);
+
+    // const argsArray = Object.keys(args).map((key) => args[key]);
+
+    // Dynamically call the function with arguments
+    const output = await global[functionName].apply(null, [args]);
+    console.log('output:', output);
+    toolOutputs.push({
+      tool_call_id: toolCall.id,
+      output: output,
+    });
+  }
+  // Submit tool outputs
+  await openai.beta.threads.runs.submitToolOutputs(
+    thread.id,
+    run.id,
+    { tool_outputs: toolOutputs },
+  );
 }
