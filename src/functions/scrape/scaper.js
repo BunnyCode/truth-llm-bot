@@ -33,9 +33,10 @@ async function getChoise(topResultsUrl) {
 
 async function searchWithDiff(query) {
   sdk.auth(diffbotApiKey);
-
+  const newQuery = query.searchstring = query.searchstring.replace(/['"]/g, '').trim();
+  const uriEncoded = encodeURIComponent(newQuery);
   const topResultsUrl = await diffSearch.search(
-    `https://www.google.com/search?q=${query}`
+    `https://www.google.com/search?q=${uriEncoded}`,
   );
 
   return JSON.stringify(topResultsUrl);
