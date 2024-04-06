@@ -6,9 +6,9 @@ const diffSearch = new DiffbotSearch();
 const diffbotApiKey = process.env.DIFFBOT_API_KEY;
 
 
-async function analyzeWithDiff(query) {
+async function analyzeArticleByUrl(query) {
   sdk.auth(diffbotApiKey);
-  const newQuery = query.searchstring = query.searchstring.replace(/['"]/g, '').trim();
+  const newQuery = query.url = query.url.replace(/['"]/g, '').trim();
   const uriEncoded = encodeURIComponent(newQuery);
   const topResultsUrl = await diffSearch.search(
     `https://www.google.com/search?q=${uriEncoded}`,
@@ -30,4 +30,4 @@ async function searchInternet(query) {
 
 }
 
-module.exports = [searchInternet, analyzeWithDiff];
+module.exports = [searchInternet, analyzeArticleByUrl];

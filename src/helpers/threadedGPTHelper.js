@@ -9,34 +9,34 @@ async function createAssistant(openai, instruction) {
   const assistant = await openai.beta.assistants.create({
     instructions: instruction,
     model: 'gpt-4',
-    tools: [{
-      type: 'function',
-      function: {
-        name: 'getArticle',
-        description: 'Get the article from the list of URLs.',
-        parameters: {
-          type: 'object',
-          properties: {
-            url: { type: 'string', description: 'URL from list to corresponding article' },
+    tools: [
+      {
+        type: 'function',
+        function: {
+          name: 'searchInternet',
+          description: 'Search the internet for the query.',
+          parameters: {
+            type: 'object',
+            properties: {
+              searchstring: { type: 'string', description: 'Keywords you want to search for' },
+            },
+            required: ['searchstring'],
           },
-          required: ['url'],
+        },
+      }, {
+        type: 'function',
+        function: {
+          name: 'analyzeArticleByUrl',
+          description: 'Get the article from the list of URLs.',
+          parameters: {
+            type: 'object',
+            properties: {
+              url: { type: 'string', description: 'URL to get article from, for further analyzis, Requires previous call to internet search function' },
+            },
+            required: ['url'],
+          },
         },
       },
-    },
-    {
-      type: 'function',
-      function: {
-        name: 'searchInternet',
-        description: 'Search the internet for the query.',
-        parameters: {
-          type: 'object',
-          properties: {
-            searchstring: { type: 'string', description: 'Keywords you want to search for' },
-          },
-          required: ['searchstring'],
-        },
-      },
-    },
     ],
   });
 
@@ -72,4 +72,17 @@ async function createMessage(openai, threadId, message) {
   return message2;
 }
 
-module.exports = [createThread, createAssistant, createMessage];
+/**
+ * Get Latest Message from the thread
+ *
+ * @param {class} openai
+ * @param {string} threadId
+ * @returns
+ */
+async function getLatestMessage(openai, threadId) {
+  const messages = await openai.beta.threads.messages.list(threadId);
+  console.log('DEBUG INFO:', messages.data[0]);
+  return messages.data[0];
+}
+
+module.exports = [createThread, createAssistant, createMessage, getLatestMessage];

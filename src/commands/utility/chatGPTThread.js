@@ -1,10 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
-const [searchInternet, analyzeWithDiff] = require('../../functions/scrape/scaper');
+const [searchInternet, analyzeArticleByUrl] = require('../../functions/scrape/scaper');
 global.searchInternet = searchInternet;
-global.analyzeWithDiff = analyzeWithDiff;
+global.analyzeArticleByUrl = analyzeArticleByUrl;
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
-const [createThread, createAssistant, createMessage] = require('../../helpers/threadedGPTHelper');
+const [createThread, createAssistant, createMessage, getLatestMessage] = require('../../helpers/threadedGPTHelper');
 
 const SLASH_COMMAND_NAME = process.env.GPT_LOCAL
   ? 'localchatgptthread2'
@@ -82,7 +82,8 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
 
     // Polling mechanism to see if runStatus is completed
     let isAvailable = true;
-    while (runStatus.status !== 'completed') {
+    let attempts = 0;
+    while (runStatus.status !== 'completed' && attempts < 10) {
       runStatus = await openai.beta.threads.runs.retrieve(
         thread.id,
         run.id,
@@ -91,7 +92,10 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
 
         if (isAvailable) {
           isAvailable = false;
-          useTool(runStatus, thread, run);
+          await useTool(runStatus, thread, run);
+          getLatestMessage(openai, thread.id);
+          isAvailable = true;
+          console.log(runStatus);
           continue;
         }
       }
@@ -106,7 +110,11 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
       console.log('runStatus:', runStatus.status);
       // Timer for 2 second
       await new Promise((resolve) => setTimeout(resolve, 2000));
+      attempts++;
     }
+
+    // Ask bot what article url to use""
+    // await createMessage(openai, thread.id, 'Please provide the article url you would like to use.');
   }
   catch (error) {
     console.error('Error in waitForGPT:', error);
@@ -118,6 +126,8 @@ async function useTool(runStatus, thread, run) {
   const toolCalls =
     runStatus.required_action.submit_tool_outputs.tool_calls;
   const toolOutputs = [];
+
+  console.log(toolCalls);
 
   for (const toolCall of toolCalls) {
     const functionName = toolCall.function.name;
@@ -132,7 +142,7 @@ async function useTool(runStatus, thread, run) {
 
     // Dynamically call the function with arguments
     const output = await global[functionName].apply(null, [args]);
-    console.log('output:', output);
+    // console.log('output:', output);
     toolOutputs.push({
       tool_call_id: toolCall.id,
       output: output,
