@@ -48,11 +48,12 @@ module.exports = {
       const thread = await createThread(openai);
       console.log('Thread created:', thread);
 
+      // Step 3: Add article to message
       const messageCreated = await createMessage(openai, thread.id, message);
       console.log('Message created:', messageCreated);
 
       const instruction = 'Provide a score from 0 to 100. Every response to assessments will be structured with a "Score: " followed by the numerical value, and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise list of keywords relevant to the content\'s claim accuracy for users to use as references for further validation.';
-
+      // Step 4: Call to GPT for response
       waitForGPT(thread, assistant, instruction, interaction);
     }
     catch (error) {
@@ -112,7 +113,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       attempts++;
     }
-
+    updateDiscordStatus(thread, interaction);
     // Ask bot what article url to use""
     // await createMessage(openai, thread.id, 'Please provide the article url you would like to use.');
   }
@@ -120,6 +121,14 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
     console.error('Error in waitForGPT:', error);
     await interaction.followUp('An error occurred while processing your request.');
   }
+}
+
+async function updateDiscordStatus(thread, interaction) {
+  const latestMessage = await getLatestMessage(openai, thread.id);
+  console.log('Latest message:', latestMessage.content[0].text.value);
+
+  // await interaction.followUp(latestMessage.content[0].text);
+  await interaction.followUp(latestMessage.content[0].text.value ?? 'An error occurred while processing your request.');
 }
 
 async function useTool(runStatus, thread, run) {

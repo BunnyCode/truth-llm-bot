@@ -8,7 +8,7 @@
 async function createAssistant(openai, instruction) {
   const assistant = await openai.beta.assistants.create({
     instructions: instruction,
-    model: 'gpt-4',
+    model: 'gpt-4-turbo-preview',
     tools: [
       {
         type: 'function',
@@ -18,12 +18,16 @@ async function createAssistant(openai, instruction) {
           parameters: {
             type: 'object',
             properties: {
-              searchstring: { type: 'string', description: 'Keywords you want to search for' },
+              searchstring: {
+                type: 'string',
+                description: 'Keywords you want to search for',
+              },
             },
             required: ['searchstring'],
           },
         },
-      }, {
+      },
+      {
         type: 'function',
         function: {
           name: 'analyzeArticleByUrl',
@@ -31,7 +35,11 @@ async function createAssistant(openai, instruction) {
           parameters: {
             type: 'object',
             properties: {
-              url: { type: 'string', description: 'URL to get article from, for further analyzis, Requires previous call to internet search function' },
+              url: {
+                type: 'string',
+                description:
+                  'URL to get article from, for further analyzis, Requires previous call to internet search function',
+              },
             },
             required: ['url'],
           },
@@ -85,4 +93,9 @@ async function getLatestMessage(openai, threadId) {
   return messages.data[0];
 }
 
-module.exports = [createThread, createAssistant, createMessage, getLatestMessage];
+module.exports = [
+  createThread,
+  createAssistant,
+  createMessage,
+  getLatestMessage,
+];
