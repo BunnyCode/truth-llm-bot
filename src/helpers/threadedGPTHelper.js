@@ -8,7 +8,7 @@
 async function createAssistant(openai, instruction) {
   const assistant = await openai.beta.assistants.create({
     instructions: instruction,
-    model: 'gpt-4',
+    model: 'gpt-4-turbo-preview',
     tools: [
       {
         type: 'function',

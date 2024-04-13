@@ -52,7 +52,8 @@ module.exports = {
       console.log('Message created:', messageCreated);
 
       const instruction = 'Provide a score from 0 to 100. Every response to assessments will be structured with a "Score: " followed by the numerical value, and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise list of keywords relevant to the content\'s claim accuracy for users to use as references for further validation.';
-
+      // Tell user to wait while processing
+      feedbackToDiscord(interaction, 'Please wait while I process your request...');
       waitForGPT(thread, assistant, instruction, interaction);
     }
     catch (error) {
@@ -84,6 +85,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
     let isAvailable = true;
     let attempts = 0;
     while (runStatus.status !== 'completed' && attempts < 10) {
+      feedbackToDiscord(interaction, `runStatus: ${runStatus.status}...`);
       runStatus = await openai.beta.threads.runs.retrieve(
         thread.id,
         run.id,
@@ -113,6 +115,11 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
       attempts++;
     }
 
+    // Get the latest message
+    const latestMessage = await getLatestMessage(openai, thread.id);
+    console.log('Latest message:', latestMessage.content[0].text);
+    const gptReply = latestMessage.content[0].text.value ?? 'An error occurred while processing your request.';
+    interaction.followUp(gptReply);
     // Ask bot what article url to use""
     // await createMessage(openai, thread.id, 'Please provide the article url you would like to use.');
   }
@@ -154,4 +161,14 @@ async function useTool(runStatus, thread, run) {
     run.id,
     { tool_outputs: toolOutputs },
   );
+}
+
+async function feedbackToDiscord(interaction, message) {
+  try {
+    await interaction.(message);
+  }
+  catch (error) {
+    console.error('Error in feedbackToDiscord:', error);
+    await interaction.followUp('there was an error on our end. Please try again.');
+  }
 }
