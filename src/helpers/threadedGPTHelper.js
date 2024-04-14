@@ -18,7 +18,7 @@ async function createAssistant(openai, instruction) {
           parameters: {
             type: 'object',
             properties: {
-              searchstring: { type: 'string', description: 'Keywords you want to search for' },
+              searchstring: { type: 'string', description: 'Keywords you want to search for, will give url collection back to run with analyzeArticleByUrl function' },
             },
             required: ['searchstring'],
           },

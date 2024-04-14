@@ -94,7 +94,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
 
         if (isAvailable) {
           isAvailable = false;
-          await useTool(runStatus, thread, run);
+          await useTool(runStatus, thread, run, interaction);
           getLatestMessage(openai, thread.id);
           isAvailable = true;
           console.log(runStatus);
@@ -129,7 +129,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
   }
 }
 
-async function useTool(runStatus, thread, run) {
+async function useTool(runStatus, thread, run, interaction) {
   const toolCalls =
     runStatus.required_action.submit_tool_outputs.tool_calls;
   const toolOutputs = [];
@@ -142,6 +142,7 @@ async function useTool(runStatus, thread, run) {
     console.log(
       `This question requires us to call a function: ${functionName}`,
     );
+    feedbackToDiscord(interaction, `Using function: ${functionName}`);
 
     const args = JSON.parse(toolCall.function.arguments);
 
@@ -165,7 +166,7 @@ async function useTool(runStatus, thread, run) {
 
 async function feedbackToDiscord(interaction, message) {
   try {
-    await interaction.(message);
+    await interaction.editReply(message);
   }
   catch (error) {
     console.error('Error in feedbackToDiscord:', error);
