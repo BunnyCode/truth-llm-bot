@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
-const [searchInternet, openArticleByUrl] = require('../../functions/scrape/scaper');
+const [searchInternet, searchArticle] = require('../../functions/scrape/scaper');
 global.searchInternet = searchInternet;
-global.openArticleByUrl = openArticleByUrl;
+global.searchArticle = searchArticle;
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
 const [createThread, createAssistant, createMessage, getLatestMessage] = require('../../helpers/threadedGPTHelper');

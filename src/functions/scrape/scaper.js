@@ -6,12 +6,12 @@ const diffSearch = new DiffbotSearch();
 const diffbotApiKey = process.env.DIFFBOT_API_KEY;
 
 
-async function openArticleByUrl(query) {
+async function searchArticle(query) {
   sdk.auth(diffbotApiKey);
   const newQuery = query.url = query.url.replace(/['"]/g, '').trim();
-  const uriEncoded = encodeURIComponent(newQuery);
-  const topResultsUrl = await diffSearch.search(
-    `https://www.google.com/search?q=${uriEncoded}`,
+  const uriEncoded = encodeURIComponent(stripTextFragment(newQuery));
+  const topResultsUrl = await diffSearch.article(
+    `${uriEncoded}`,
   );
 
   return JSON.stringify(topResultsUrl);
@@ -25,9 +25,15 @@ async function searchInternet(query) {
   const topResultsUrl = await diffSearch.search(
     `https://www.google.com/search?q=${uriEncoded}`,
   );
-
-  return JSON.stringify(topResultsUrl);
+  const urlList = topResultsUrl?.map(item => item.link);
+  const articleLinks = { 'articleLinks': urlList };
+  console.log(articleLinks);
+  return JSON.stringify(articleLinks);
 
 }
 
-module.exports = [searchInternet, openArticleByUrl];
+function stripTextFragment(url) {
+  return url.replace(/#:.*/, '');
+}
+
+module.exports = [searchInternet, searchArticle];
