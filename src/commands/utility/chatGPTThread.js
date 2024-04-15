@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
-const [searchInternet, analyzeArticleByUrl] = require('../../functions/scrape/scaper');
+const [searchInternet, openArticleByUrl] = require('../../functions/scrape/scaper');
 global.searchInternet = searchInternet;
-global.analyzeArticleByUrl = analyzeArticleByUrl;
+global.openArticleByUrl = openArticleByUrl;
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
 const [createThread, createAssistant, createMessage, getLatestMessage] = require('../../helpers/threadedGPTHelper');
@@ -90,12 +90,13 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
         thread.id,
         run.id,
       );
-      if (runStatus.status === 'requires_action') {
 
+      // Check for requires_action status (tool call required)
+      if (runStatus.status === 'requires_action') {
         if (isAvailable) {
           isAvailable = false;
           await useTool(runStatus, thread, run, interaction);
-          getLatestMessage(openai, thread.id);
+          await getLatestMessage(openai, thread.id);
           isAvailable = true;
           console.log(runStatus);
           continue;
@@ -111,7 +112,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
       }
       console.log('runStatus:', runStatus.status);
       // Timer for 2 second
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       attempts++;
     }
 
@@ -119,6 +120,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
     const latestMessage = await getLatestMessage(openai, thread.id);
     console.log('Latest message:', latestMessage.content[0].text);
     const gptReply = latestMessage.content[0].text.value ?? 'An error occurred while processing your request.';
+    latestMessage.content[0].text.value ? feedbackToDiscord(interaction, 'Done!') : feedbackToDiscord(interaction, 'An error occurred');
     interaction.followUp(gptReply);
     // Ask bot what article url to use""
     // await createMessage(openai, thread.id, 'Please provide the article url you would like to use.');
@@ -142,7 +144,7 @@ async function useTool(runStatus, thread, run, interaction) {
     console.log(
       `This question requires us to call a function: ${functionName}`,
     );
-    feedbackToDiscord(interaction, `Using function: ${functionName}`);
+    await feedbackToDiscord(interaction, `Using function: ${functionName}`);
 
     const args = JSON.parse(toolCall.function.arguments);
 

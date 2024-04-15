@@ -18,7 +18,7 @@ async function createAssistant(openai, instruction) {
           parameters: {
             type: 'object',
             properties: {
-              searchstring: { type: 'string', description: 'Keywords you want to search for, will give url collection back to run with analyzeArticleByUrl function' },
+              searchstring: { type: 'string', description: 'Keywords you want to search for, will give url collection back to run with openArticleByUrl function' },
             },
             required: ['searchstring'],
           },
@@ -26,12 +26,12 @@ async function createAssistant(openai, instruction) {
       }, {
         type: 'function',
         function: {
-          name: 'analyzeArticleByUrl',
-          description: 'Get the article from the list of URLs.',
+          name: 'openArticleByUrl',
+          description: 'Open URL and retrieve article content. This function is used to get the article content from the URL.',
           parameters: {
             type: 'object',
             properties: {
-              url: { type: 'string', description: 'URL to get article from, for further analyzis, Requires previous call to internet search function' },
+              url: { type: 'string', description: 'open URL to get article, for further analyzis' },
             },
             required: ['url'],
           },
@@ -82,6 +82,8 @@ async function createMessage(openai, threadId, message) {
 async function getLatestMessage(openai, threadId) {
   const messages = await openai.beta.threads.messages.list(threadId);
   console.log('DEBUG INFO:', messages.data[0]);
+  console.log('DEBUG TEXT', messages.data[0].content[0].text.value);
+
   return messages.data[0];
 }
 

@@ -6,7 +6,7 @@ const diffSearch = new DiffbotSearch();
 const diffbotApiKey = process.env.DIFFBOT_API_KEY;
 
 
-async function analyzeArticleByUrl(query) {
+async function openArticleByUrl(query) {
   sdk.auth(diffbotApiKey);
   const newQuery = query.url = query.url.replace(/['"]/g, '').trim();
   const uriEncoded = encodeURIComponent(newQuery);
@@ -30,4 +30,4 @@ async function searchInternet(query) {
 
 }
 
-module.exports = [searchInternet, analyzeArticleByUrl];
+module.exports = [searchInternet, openArticleByUrl];
