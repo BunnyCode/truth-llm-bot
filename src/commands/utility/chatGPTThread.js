@@ -7,7 +7,7 @@ const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
 const [createThread, createAssistant, createMessage, getLatestMessage] = require('../../helpers/threadedGPTHelper');
 
 const SLASH_COMMAND_NAME = process.env.GPT_LOCAL
-  ? 'localchatgptthread2'
+  ? `localchatgptthread${process.env.GPT_USER}`
   : 'chatgptthread';
 
 console.log(
