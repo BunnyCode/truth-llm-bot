@@ -61,25 +61,28 @@ module.exports = {
       // Ensure each promise is returned from the map function
       const promises = keys.map((key) => {
         const systemMessageVersion = systemMessage[key];
-        return askGPT(ChatGPTAPIKey, message, systemMessageVersion); // Added return statement
+        // Added return statement
+        return askGPT(ChatGPTAPIKey, message, systemMessageVersion);
       });
 
       let newMessage = '';
 
       // Await Promise.all to wait for all promises to resolve
       try {
+        // Process each response
         const responses = await Promise.all(promises);
         const combinedResponse = responses.map((response) =>
           response.ok ? response.json() : null,
-        ); // Process each response
+        );
 
         // Since responses.json() is also a promise, we need to wait for them too
         const data = await Promise.all(combinedResponse);
 
         // Now, data is an array of all the JSON responses, you can concatenate or process them as needed
+        // Assuming each response has the same structure
         newMessage = data
           .map((d) => d.choices[0].message.content.trim())
-          .join(' ### '); // Assuming each response has the same structure
+          .join(' ### ');
 
         // Continue with splitting and sending the message as before
       }

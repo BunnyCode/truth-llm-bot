@@ -1,4 +1,8 @@
 const { SlashCommandBuilder } = require('discord.js');
+const path = require('path');
+
+const discordFunctions = require(path.join(__dirname, '../../helpers/discordFunctions'));
+const dF = new discordFunctions;
 const [searchInternet, searchArticle] = require('../../functions/scrape/scaper');
 global.searchInternet = searchInternet;
 global.searchArticle = searchArticle;
@@ -30,31 +34,46 @@ module.exports = {
   async execute(interaction) {
     try {
       let message = interaction.options.getString('input');
+      // Read the profile JSON file and parse the data
+      const filePath = path.join(__dirname, '../gpt/system/version1.json');
+      const assistants = await dF.botSystemProfile(filePath);
+
+
       // regexp if message starts with -v get the number
       // and remove it from the message
-
-      let version;
+      let version, assistantProfile;
       if (message.startsWith('-v')) {
         version = message.match(/^-v(\w+)\s/)[1];
         message = message.replace(/^-v\w+\s/, '');
+        // Get the version of the system message (array of strings)
+        const assistantMessage = assistants.assistantVersions;
+        assistantProfile = assistantMessage
+          ? assistantMessage[version].join(' ')
+          : assistantMessage.v1.join(' ');
       }
-      console.log(message, version);
+      console.log('\n\nPicked VERSION:', version, '\n\n');
 
       // Step 1: Create an Assistant
-      const assistant = await createAssistant(openai, version);
+      const assistant = await createAssistant(openai, assistantProfile);
       console.log('Assistant created:', assistant);
 
       // Step 2: Create a Thread
       const thread = await createThread(openai);
       console.log('Thread created:', thread);
 
+      // Step 3: Create a Message (prime the assistant with a message)
       const messageCreated = await createMessage(openai, thread.id, message);
       console.log('Message created:', messageCreated);
 
-      const instruction = 'Provide a score from 0 to 100. Every response to assessments will be structured with a "Score: " followed by the numerical value, and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise list of keywords relevant to the content\'s claim accuracy for users to use as references for further validation.';
+      const goalInstruction = 'Provide a score from 0 to 100. Every response to assessments \
+        will be structured with a "Score: " followed by the numerical value, \
+        and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise \
+        list of keywords relevant to the content\'s claim accuracy for users to use \
+        as references for further validation. Finaly add a "Summary: " 50-100 words';
+
       // Tell user to wait while processing
       feedbackToDiscord(interaction, 'Please wait while I process your request...');
-      waitForGPT(thread, assistant, instruction, interaction);
+      waitForGPT(thread, assistant, goalInstruction, interaction);
     }
     catch (error) {
       console.error('Error executing command:', error);

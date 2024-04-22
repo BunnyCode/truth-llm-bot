@@ -13,7 +13,7 @@ class DiffbotWebSearch {
 
     const data = await response.json();
     console.log('data', JSON.stringify(data));
-    return data.objects[0].items;
+    return data?.objects[0].items ?? ['No results found, try again'];
   }
 
   async article(url) {
