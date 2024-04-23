@@ -69,7 +69,9 @@ module.exports = {
         will be structured with a "Score: " followed by the numerical value, \
         and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise \
         list of keywords relevant to the content\'s claim accuracy for users to use \
-        as references for further validation. Finaly add a "Summary: " 50-100 words';
+        as references for further validation. Finaly add a "Summary: " 50-150 words\
+        Finally Summarize the article text and what lead you to the conclusion of that score, no more than 200 words.\
+        IT IS PARAMOUNT THE INTERNET ARTICLES HAVE HIGER VALIDITY RATING THEN YOUR TRANINGDATA';
 
       // Tell user to wait while processing
       feedbackToDiscord(interaction, 'Please wait while I process your request...');
@@ -137,7 +139,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
 
     // Get the latest message
     const latestMessage = await getLatestMessage(openai, thread.id);
-    console.log('Latest message:', latestMessage.content[0].text);
+    console.log('Latest message:', latestMessage?.content[0].text);
     const gptReply = latestMessage.content[0].text.value ?? 'An error occurred while processing your request.';
     latestMessage.content[0].text.value ? feedbackToDiscord(interaction, 'Done!') : feedbackToDiscord(interaction, 'An error occurred');
     interaction.followUp(gptReply);
