@@ -51,16 +51,15 @@ module.exports = {
 
       // Assuming askGPT function returns a promise and takes systemMessageVersion as an argument
       const keys = [
-        'accuracy_of_claims',
         'reliability_of_sources',
         'logical_consistency',
         'bias_and_objectivity',
       ];
-      const systemMessage = systemMessageContent.systemMessage;
+      const systemMessage = systemMessageContent.assistantVersions;
 
       // Ensure each promise is returned from the map function
       const promises = keys.map((key) => {
-        const systemMessageVersion = systemMessage[key];
+        const systemMessageVersion = systemMessage[key].join(' ');
         // Added return statement
         return askGPT(ChatGPTAPIKey, message, systemMessageVersion);
       });
