@@ -79,7 +79,8 @@ module.exports = {
         and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise \
         list of keywords relevant to the content\'s claim accuracy for users to use \
         as references for further validation. Finaly add a "Summary: " 50-150 words\
-        Finally Summarize the article text and what lead you to the conclusion of that score, no more than 200 words.\
+        Finally Summarize (Conclustion:) the article text (50-150 words) and what lead you to the conclusion of that score, \
+        no more than 1900 characters in total.\
         IT IS PARAMOUNT THE INTERNET ARTICLES HAVE HIGER VALIDITY RATING THEN YOUR TRANINGDATA';
 
       // Tell user to wait while processing
