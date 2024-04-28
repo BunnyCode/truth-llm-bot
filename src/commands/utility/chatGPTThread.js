@@ -75,12 +75,14 @@ module.exports = {
 
       const goalInstruction =
         'Provide a score from 0 to 100. Every response to assessments \
-        will be structured with a "Score: " followed by the numerical value, \
-        and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) followed by a concise \
-        list of keywords relevant to the content\'s claim accuracy for users to use \
-        as references for further validation. Finaly add a "Summary: " 50-150 words\
-        Finally Summarize (Conclustion:) the article text (50-150 words) and what lead you to the conclusion of that score, \
-        no more than 1900 characters in total.\
+        will be structured with a "Score: " \
+        followed by the numerical value, and "Keywords: " (FORMAT HERE IS VERY IMPORTANT!!) \
+        followed by a concise list of keywords relevant to the content\'s claim accuracy for users to use \
+        as references for further validation. \
+        Also add a "Summary: " 50-150 words\
+        Finally add a Differences: 50-100 word differences from the text and the found articles\
+        Take the DIFFERENCES in to account when setting the score.\
+        this is a what lead you to the conclusion of that score, NO MORE THAN 1900 CARACTERS IN TOTAL.\
         IT IS PARAMOUNT THE INTERNET ARTICLES HAVE HIGER VALIDITY RATING THEN YOUR TRANINGDATA';
 
       // Tell user to wait while processing
@@ -121,6 +123,8 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
       // Check for requires_action status (tool call required)
       if (runStatus.status === 'requires_action') {
         if (isAvailable) {
+          // Flow information
+          console.log('\n\n\nCalled on attempt:', attempts, '\n\n\n', 'available:', isAvailable, '\n\n\n');
           isAvailable = false;
           await useTool(runStatus, thread, run, interaction);
           await getLatestMessage(openai, thread.id);
@@ -138,7 +142,7 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
         break;
       }
       console.log('runStatus:', runStatus.status);
-      // Timer for 2 second
+      // Loop timer for 3 second
       await new Promise((resolve) => setTimeout(resolve, 3000));
       attempts++;
     }
@@ -152,9 +156,8 @@ async function waitForGPT(thread, assistant, instruction, interaction) {
     latestMessage.content[0].text.value
       ? feedbackToDiscord(interaction, 'Done!')
       : feedbackToDiscord(interaction, 'An error occurred');
+    // Final response
     interaction.followUp(gptReply);
-    // Ask bot what article url to use""
-    // await createMessage(openai, thread.id, 'Please provide the article url you would like to use.');
   }
   catch (error) {
     console.error('Error in waitForGPT:', error);
