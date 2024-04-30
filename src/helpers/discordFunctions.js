@@ -16,5 +16,17 @@ module.exports = class discordFunctions {
     const data = await fs.readFile(filePath);
     return JSON.parse(data);
   }
+
+  async feedbackToDiscord(interaction, message) {
+    try {
+      await interaction.editReply(message);
+    }
+    catch (error) {
+      console.error('Error in feedbackToDiscord:', error);
+      await interaction.followUp(
+        'there was an error on our end. Please try again.',
+      );
+    }
+  }
 };
 
