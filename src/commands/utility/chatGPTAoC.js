@@ -1,19 +1,18 @@
 const { SlashCommandBuilder } = require('discord.js');
-const MultiCallGPT = require('../../helpers/MultiCallGPT.js');
-// const fs = require('fs').promises;
+const GptAssistantThreads = require('../../helpers/GptAssistantThreads.js');
 const path = require('path');
-// const { fileURLToPath } = require('url');
 const discordFunctions = require(path.join(
   __dirname,
   '../../helpers/discordFunctions',
 ));
 const dF = new discordFunctions();
+
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.CHATGPT_API_KEY });
 
 const SLASH_COMMAND_NAME = process.env.GPT_LOCAL
-  ? 'localchatgptmulti'
-  : 'chatgptmulti';
+  ? `localchatgptthread${process.env.GPT_USER}`
+  : 'chatgptthread';
 
 console.log(
   `${
@@ -23,7 +22,7 @@ console.log(
 
 const chatGPTCommand = new SlashCommandBuilder()
   .setName(`${SLASH_COMMAND_NAME}`)
-  .setDescription('Sends back multishot ChatGPT response.')
+  .setDescription('Sends back ChatGPT response.')
   .addStringOption((option) =>
     option
       .setName('input')
@@ -31,11 +30,15 @@ const chatGPTCommand = new SlashCommandBuilder()
       .setRequired(true),
   );
 
+// Make calls to the threaded GPT API
 module.exports = {
   data: chatGPTCommand,
   async execute(interaction) {
-    const MultiGPT = new MultiCallGPT(openai, true);
-    const gptMultiAnswe = await MultiGPT.multiExecution(interaction);
-    dF.feedbackToDiscord(interaction, gptMultiAnswe);
+    console.log(dF);
+    const gAT = new GptAssistantThreads(openai, true);
+    const instruction = 'accuracy_of_claims';
+    const gptThreadAssessment = await gAT.threadExecution(interaction, instruction);
+    dF.feedbackToDiscord(interaction, gptThreadAssessment);
   },
 };
+
