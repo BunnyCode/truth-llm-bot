@@ -38,7 +38,6 @@ module.exports = class MultiCallGPT {
 
       // Assuming askGPT function returns a promise and takes systemMessageVersion as an argument
       const keys = [
-        'reliability_of_sources',
         'logical_consistency',
         'bias_and_objectivity',
       ];

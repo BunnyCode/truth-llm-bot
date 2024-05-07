@@ -175,7 +175,7 @@ module.exports = class GptAssistantThreads {
 
       // Get the latest message
       const latestMessage = await this.getLatestMessage(thread.id);
-      console.log('Latest message:', latestMessage?.content[0].text);
+      console.log('Latest message:', latestMessage?.content[0]?.text ?? 'No content found');
       if (latestMessage.content[0].text.value !== undefined) {
         if (this.dF) {
           this.dF.feedbackToDiscord(interaction, 'Done!');
