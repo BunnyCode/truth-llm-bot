@@ -57,7 +57,7 @@ module.exports = class GptAssistantThreads {
         as references for further validation. \
         Also add a "Summary: " 50-150 words\
         Finally add a Differences: 50-100 word differences from the text and the found articles\
-        Take the DIFFERENCES in to account when setting the score.\
+        Take the DIFFERENCES in to account when setting the score, BE VERY HARSH on inaccuracies.\
         this is a what lead you to the conclusion of that score, NO MORE THAN 1700 CARACTERS IN TOTAL.\
         IT IS PARAMOUNT THE INTERNET ARTICLES HAVE HIGER VALIDITY RATING THEN YOUR TRANINGDATA';
 
