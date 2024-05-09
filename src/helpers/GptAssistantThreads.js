@@ -58,7 +58,7 @@ module.exports = class GptAssistantThreads {
         Also add a "Summary: " 50-150 words\
         Finally add a Differences: 50-100 word differences from the text and the found articles\
         Take the DIFFERENCES in to account when setting the score.\
-        this is a what lead you to the conclusion of that score, NO MORE THAN 1900 CARACTERS IN TOTAL.\
+        this is a what lead you to the conclusion of that score, NO MORE THAN 1700 CARACTERS IN TOTAL.\
         IT IS PARAMOUNT THE INTERNET ARTICLES HAVE HIGER VALIDITY RATING THEN YOUR TRANINGDATA';
 
       // Tell user to wait while processing
@@ -140,7 +140,7 @@ module.exports = class GptAssistantThreads {
       // Polling mechanism to see if runStatus is completed
       let isAvailable = true;
       let attempts = 0;
-      while (runStatus.status !== 'completed' && attempts < 10) {
+      while (runStatus.status !== 'completed' && attempts < 15) {
         if (this.dF) {
           this.dF.feedbackToDiscord(interaction, `runStatus: ${runStatus.status}...`);
         }
@@ -176,7 +176,7 @@ module.exports = class GptAssistantThreads {
       // Get the latest message
       const latestMessage = await this.getLatestMessage(thread.id);
       console.log('Latest message:', latestMessage?.content[0]?.text ?? 'No content found');
-      if (latestMessage.content[0].text.value !== undefined) {
+      if (latestMessage?.content[0]?.text?.value !== undefined) {
         if (this.dF) {
           this.dF.feedbackToDiscord(interaction, 'Done!');
         }
