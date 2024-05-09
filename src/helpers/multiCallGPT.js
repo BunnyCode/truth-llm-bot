@@ -29,8 +29,14 @@ module.exports = class MultiCallGPT {
 
   async multiExecution(interaction) {
     try {
+      let message;
       const ChatGPTAPIKey = process.env.CHATGPT_API_KEY;
-      const message = interaction.options.getString('input');
+      if (this.dF) {
+        message = interaction.options.getString('input');
+      }
+      else {
+        message = interaction;
+      }
       // Read the profile JSON file and parse the data
       const filePath = path.join(__dirname, '../commands/gpt/system/version1.json');
       const data = await fs.readFile(filePath);
@@ -77,27 +83,31 @@ module.exports = class MultiCallGPT {
         // Handle error, for example by sending an error message to the user
       }
 
+      if (this.dF) {
       // Use splitMessage to handle long messages
-      const messageParts = this.dF.splitMessage(newMessage);
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.deferReply();
-        for (const part of messageParts) {
-          await interaction.followUp(part);
+        const messageParts = this.dF.splitMessage(newMessage);
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.deferReply();
+          for (const part of messageParts) {
+            await interaction.followUp(part);
+          }
         }
-      }
-      else {
-        for (const part of messageParts) {
-          await interaction.followUp(part);
+        else {
+          for (const part of messageParts) {
+            await interaction.followUp(part);
+          }
         }
       }
     }
     catch (error) {
       console.error('Error executing command:', error);
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply('Failed to execute the command.');
-      }
-      else {
-        await interaction.followUp('Failed to execute the command.');
+      if (this.dF) {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply('Failed to execute the command.');
+        }
+        else {
+          await interaction.followUp('Failed to execute the command.');
+        }
       }
     }
   }

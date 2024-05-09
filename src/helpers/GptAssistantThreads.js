@@ -34,7 +34,15 @@ module.exports = class GptAssistantThreads {
         ? assistantMessage[version].join(' ')
         : assistantMessage['v1'].join(' ');
 
-      const message = interaction.options.getString('input');
+      let message;
+      if (this.dF) {
+        message = interaction.options.getString('input');
+      }
+      else {
+        message = interaction;
+      }
+
+
       console.log('\n\nPicked VERSION:', version, '\n\n');
 
       // Step 1: Create an Assistant
@@ -74,11 +82,13 @@ module.exports = class GptAssistantThreads {
     }
     catch (error) {
       console.error('Error executing command:', error);
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply('Failed to execute the command.');
-      }
-      else {
-        await interaction.followUp('Failed to execute the command.');
+      if (this.dF) {
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply('Failed to execute the command.');
+        }
+        else {
+          await interaction.followUp('Failed to execute the command.');
+        }
       }
     }
   }

@@ -6,7 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon -r dotenv/config src/bot.js",
-    "start": "node src/bot.js"
+    "start": "node src/bot.js",
+    "list": "node -r dotenv/config src/list.js"
   },
   "author": [
     "Theodor Borgman",
