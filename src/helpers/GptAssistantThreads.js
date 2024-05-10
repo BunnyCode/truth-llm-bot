@@ -201,9 +201,11 @@ module.exports = class GptAssistantThreads {
     }
     catch (error) {
       console.error('Error in waitForGPT:', error);
-      await interaction.followUp(
-        'An error occurred while processing your request.',
-      );
+      if (this.dF) {
+        await interaction.followUp(
+          'An error occurred while processing your request.',
+        );
+      }
     }
   }
 
@@ -216,12 +218,13 @@ module.exports = class GptAssistantThreads {
     for (const toolCall of toolCalls) {
       const functionName = toolCall.function.name;
 
+
       console.log(`This question requires us to call a function: ${functionName}`);
       if (this.dF) {
         await this.dF.feedbackToDiscord(interaction, `Using function: ${functionName}`);
       }
 
-      const args = JSON.parse(toolCall.function.arguments);
+      const args = await JSON.parse(toolCall.function.arguments);
 
       // Dynamically call the function with arguments
       const output = await global[functionName].apply(null, [args]);
