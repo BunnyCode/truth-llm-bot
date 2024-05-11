@@ -34,7 +34,7 @@ async function listItemCheck(interaction, itemNumber) {
 
 async function main() {
   try {
-    const articlesPath = path.join(__dirname, '..', 'articles.json');
+    const articlesPath = path.join(__dirname, '..', 'articles2.json');
     const articlesData = fs.readFileSync(articlesPath, 'utf8');
     const articlesJson = JSON.parse(articlesData);
     const formattedArticles = articlesJson.articles;
