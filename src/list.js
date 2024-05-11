@@ -11,7 +11,7 @@ console.log('Starting TruGPT in List developer mode...');
 const outputFile = path.join(__dirname, 'listout.txt');
 async function listItemCheck(interaction, itemNumber) {
   try {
-    // const interaction = 'WASHINGTON (Reuters) - U.S. President-elect Donald Trump, after a meeting with the Senate Republican leader on Thursday, said his top three priorities are immigration, healthcare and jobs. Trump spoke to reporters after his meeting with Senate Majority Leader Mitch McConnell. Earlier Thursday, Trump held meetings with House of Representatives Speaker Paul Ryan and President Barack Obama. ';
+
     // Call AoC
     const gAT = new GptAssistantThreads(openai, false);
     const instruction = 'accuracy_of_claims';
@@ -19,11 +19,11 @@ async function listItemCheck(interaction, itemNumber) {
     const output = `Article ${itemNumber}\n\n${gptThreadAssessment}\n\n`;
     fs.writeFile(outputFile, output, { flag: 'a+' }, err => {});
     // Call multi function
-    // const multiCall = new MultiCallGPT(openai, false);
-    // const multiCallAssessment = await multiCall.multiExecution(interaction);
-    // // Feedback to Discord
-    // console.log(multiCallAssessment);
-    // fs.writeFile(outputFile, multiCallAssessment, { flag: 'a+' }, err => {});
+    const multiCall = new MultiCallGPT(openai, false);
+    const multiCallAssessment = await multiCall.multiExecution(interaction);
+    // Feedback to Discord
+    console.log(multiCallAssessment);
+    fs.writeFile(outputFile, multiCallAssessment, { flag: 'a+' }, err => {});
 
   }
   catch (error) {
