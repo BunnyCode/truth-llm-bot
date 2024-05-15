@@ -1,5 +1,13 @@
 # truth-llm-bot
 
+#### Required Variables
+
+DISCORD_TOKEN
+CLIENT_ID
+GUILD_ID
+CHATGPT_API_KEY
+DIFFBOT_API_KEY (while external Internet is required)
+
 # Communications for Threads
 
 <- User Output
