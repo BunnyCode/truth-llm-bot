@@ -17,13 +17,13 @@ async function listItemCheck(interaction, itemNumber) {
     const instruction = 'accuracy_of_claims';
     const gptThreadAssessment = await gAT.threadExecution(interaction, instruction);
     const output = `Article ${itemNumber}\n\n${gptThreadAssessment}\n\n`;
-    fs.writeFile(outputFile, output, { flag: 'a+' }, err => {});
+    fs.writeFile(outputFile, output, { flag: 'a+' }, err => {console.log(err);});
     // Call multi function
     const multiCall = new MultiCallGPT(openai, false);
     const multiCallAssessment = await multiCall.multiExecution(interaction);
     // Feedback to Discord
     console.log(multiCallAssessment);
-    fs.writeFile(outputFile, multiCallAssessment, { flag: 'a+' }, err => {});
+    fs.writeFile(outputFile, multiCallAssessment, { flag: 'a+' }, err => {console.log(err);});
 
   }
   catch (error) {

@@ -102,7 +102,7 @@ module.exports = class GptAssistantThreads {
   async createAssistant(assistantProfile) {
     const assistant = await this.openai.beta.assistants.create({
       instructions: assistantProfile,
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o',
       tools: [
         {
           type: 'function',

@@ -27,3 +27,5 @@
   -> Set status to done in feedback
   -> Follow up with the GPT assistants answer
   
+V1 openAI
+"openai": "^4.29.1"
